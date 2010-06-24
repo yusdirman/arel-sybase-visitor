@@ -180,3 +180,27 @@ As you can see, we're completely missing data for user with id 3. `dumpty` has n
     FROM users
     LEFT OUTER JOIN (SELECT user_id, count(*) as cnt FROM photos GROUP BY user_id) AS photos_aggregation
       ON photos_aggregation.user_id = users.id
+
+## ActiveRecord Adapter Support
+
+Arel provides built-in support for the following ActiveRecord DB adapters:
+
+* IBM DB
+* MySQL
+* Oracle
+* PostgreSQL
+* SQLite
+
+You can add support for other adapters by defining a SQL compiler at the appropriate place.  Here's an example: let's say
+you've got a YourSQL adapter.  Create a file at `yoursql/arel_compiler.rb` somewhere on the load path (presumably in
+the YourSQL adapter gem).  The contents of that file can be as simple as:
+
+    module Arel
+      module SqlCompiler
+        class YourSQLCompiler < GenericCompiler
+        end
+      end
+    end
+
+Override any methods as necessary.  See examples at
+[lib/arel/engines/sql/compilers](http://github.com/rails/arel/tree/master/lib/arel/engines/sql/compilers/).
