@@ -4,7 +4,7 @@ module Arel
   class TypecastError < StandardError ; end
   class Attribute
     attr_reader :relation, :name, :alias, :ancestor, :hash
-    attr_reader :history, :root
+    attr_reader :history
 
     def initialize(relation, name, options = {})
       @relation = relation # this is actually a table (I think)
