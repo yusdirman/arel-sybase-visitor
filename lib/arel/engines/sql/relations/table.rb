@@ -2,17 +2,36 @@ module Arel
   class Table
     include Relation, Recursion::BaseCase
 
-    cattr_accessor :engine, :tables
-    attr_reader :name, :engine, :table_alias, :options
+    @@engine = nil
+    @@tables = nil
+    class << self # FIXME: Do we really need these?
+      def engine; @@engine; end
+      def engine= e; @@engine = e; end
+
+      def tables; @@tables; end
+      def tables= e; @@tables = e; end
+    end
+
+    attr_reader :name, :engine, :table_alias, :options, :christener
+    attr_reader :table_exists
+    alias :table_exists? :table_exists
 
     def initialize(name, options = {})
       @name = name.to_s
       @table_exists = nil
+      @table_alias = nil
+      @christener = Sql::Christener.new
+      @attributes = nil
+      @matching_attributes = nil
 
       if options.is_a?(Hash)
         @options = options
         @engine = options[:engine] || Table.engine
-        @table_alias = options[:as].to_s if options[:as].present? && options[:as].to_s != @name
+
+        if options[:as]
+          as = options[:as].to_s
+          @table_alias = as unless as == @name
+        end
       else
         @engine = options # Table.new('foo', engine)
       end
@@ -29,7 +48,9 @@ module Arel
           end
         end
 
-        @@tables ||= engine.tables
+        @@tables ||= engine.connection.tables
+        @table_exists = @@tables.include?(name) ||
+          @engine.connection.table_exists?(name)
       end
     end
 
@@ -37,34 +58,16 @@ module Arel
       Table.new(name, options.merge(:as => table_alias))
     end
 
-    def table_exists?
-      if @table_exists
-        true
-      else
-        @table_exists = @@tables.include?(name) || engine.table_exists?(name)
-      end
-    end
-
     def attributes
-      return @attributes if defined?(@attributes)
+      return @attributes if @attributes
       if table_exists?
-        @attributes ||= begin
-          attrs = columns.collect do |column|
-            Sql::Attributes.for(column).new(column, self, column.name.to_sym)
-          end
-          Header.new(attrs)
+        attrs = columns.collect do |column|
+          Sql::Attributes.for(column).new(column, self, column.name.to_sym)
         end
+        @attributes = Header.new(attrs)
       else
         Header.new
       end
-    end
-
-    def eql?(other)
-      self == other
-    end
-
-    def hash
-      @hash ||= :name.hash
     end
 
     def column_for(attribute)
@@ -72,7 +75,7 @@ module Arel
     end
 
     def columns
-      @columns ||= engine.columns(name, "#{name} Columns")
+      @columns ||= engine.connection.columns(name, "#{name} Columns")
     end
 
     def reset
@@ -80,10 +83,13 @@ module Arel
       @attributes = Header.new([])
     end
 
-    def ==(other)
-      Table       === other and
-      name        ==  other.name and
-      table_alias ==  other.table_alias
+    private
+    def matching_attributes
+      @matching_attributes ||= Hash[attributes.map { |a| [a.root, true] }]
+    end
+
+    def has_attribute?(attribute)
+      matching_attributes.key? attribute.root
     end
   end
 end

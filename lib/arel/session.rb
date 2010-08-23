@@ -1,51 +1,35 @@
 module Arel
   class Session
-    class << self
-      attr_accessor :instance
-      alias_method :manufacture, :new
+    @instance = nil
 
-      def start
-        if defined?(@started) && @started
-          yield
-        else
-          begin
-            @started = true
-            @instance = manufacture
-            singleton_class.class_eval do
-              undef :new
-              alias_method :new, :instance
-            end
-            yield
-          ensure
-            singleton_class.class_eval do
-              undef :new
-              alias_method :new, :manufacture
-            end
-            @started = false
-          end
-        end
-      end
+    def self.instance
+      @instance || new
     end
 
-    module CRUD
-      def create(insert)
-        insert.call
-      end
-
-      def read(select)
-        (@read ||= Hash.new do |hash, select|
-          hash[select] = select.call
-        end)[select]
-      end
-
-      def update(update)
-        update.call
-      end
-
-      def delete(delete)
-        delete.call
-      end
+    def self.start
+      @instance ||= new
+      yield @instance
+    ensure
+      @instance = nil
     end
-    include CRUD
+
+    def create(insert)
+      insert.call
+    end
+
+    def read(select)
+      @read ||= {}
+      key = select.object_id
+      return @read[key] if @read.key? key
+      @read[key] = select.call
+    end
+
+    def update(update)
+      update.call
+    end
+
+    def delete(delete)
+      delete.call
+    end
   end
 end

@@ -10,16 +10,16 @@ module Arel
     describe '::start' do
       describe '::instance' do
         it "it is a singleton within the started session" do
-          Session.start do
-            Session.new.should == Session.new
+          Session.start do |session|
+            Session.instance.should == session
           end
         end
 
         it "is a singleton across nested sessions" do
-          Session.start do
-            outside = Session.new
-            Session.start do
-              Session.new.should == outside
+          Session.start do |s1|
+            outside = Session.instance
+            Session.start do |s2|
+              Session.instance.should == outside
             end
           end
         end
@@ -30,7 +30,7 @@ module Arel
       end
     end
 
-    describe Session::CRUD do
+    describe 'session crud' do
       before do
         @insert = Insert.new(@relation, @relation[:name] => 'nick')
         @update = Update.new(@relation, @relation[:name] => 'nick')

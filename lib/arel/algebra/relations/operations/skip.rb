@@ -1,7 +1,14 @@
 module Arel
   class Skip < Compound
-    attributes :relation, :skipped
-    deriving   :initialize, :==
-    requires   :skipping
+    attr_reader :relation, :skipped
+
+    def initialize relation, skipped
+      super(relation)
+      @skipped = skipped
+    end
+
+    def eval
+      unoperated_rows[skipped..-1]
+    end
   end
 end

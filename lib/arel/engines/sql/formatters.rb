@@ -1,13 +1,28 @@
 module Arel
   module Sql
     class Formatter
-      attr_reader :environment
-      delegate :christener, :engine, :to => :environment
-      delegate :name_for, :to => :christener
-      delegate :quote_table_name, :quote_column_name, :quote, :to => :engine
+      attr_reader :environment, :christener, :engine
 
       def initialize(environment)
         @environment = environment
+        @christener  = environment.christener
+        @engine      = environment.engine
+      end
+
+      def name_for thing
+        @christener.name_for thing
+      end
+
+      def quote_column_name name
+        @engine.connection.quote_column_name name
+      end
+
+      def quote_table_name name
+        @engine.connection.quote_table_name name
+      end
+
+      def quote value, column = nil
+        @engine.connection.quote value, column
       end
     end
 
@@ -97,12 +112,13 @@ module Arel
       end
 
       def table(table)
-        if table.name =~ /\s/
-          table.name
-        else
-          quote_table_name(table.name) +
-            (table.name != name_for(table) ? " #{quote_table_name(name_for(table))}" : '')
-        end
+        table_name = table.name
+        return table_name if table_name =~ /\s/
+
+        unique_name = name_for(table)
+
+        quote_table_name(table_name) +
+          (table_name != unique_name ? " #{quote_table_name(unique_name)}" : '')
       end
     end
 

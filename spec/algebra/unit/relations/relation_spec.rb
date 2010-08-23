@@ -23,7 +23,7 @@ module Arel
       end
     end
 
-    describe Relation::Operable do
+    describe 'Relation::Operable' do
       describe 'joins' do
         before do
           @predicate = @relation[:id].eq(@relation[:id])
@@ -32,14 +32,23 @@ module Arel
         describe '#join' do
           describe 'when given a relation' do
             it "manufactures an inner join operation between those two relations" do
-              @relation.join(@relation).on(@predicate). \
-                should == InnerJoin.new(@relation, @relation, @predicate)
+              join = @relation.join(@relation).on(@predicate)
+              join.relation1.should == @relation
+              join.relation2.should == @relation
+              join.predicates.should == [@predicate]
+              join.should be_kind_of(InnerJoin)
             end
           end
 
           describe "when given a string" do
             it "manufactures a join operation with the string passed through" do
-              @relation.join(arbitrary_string = "ASDF").should == StringJoin.new(@relation, arbitrary_string)
+              arbitrary_string = "ASDF"
+
+              join = @relation.join(arbitrary_string)
+              join.relation1.should == @relation
+              join.relation2.should == arbitrary_string
+              join.predicates.should == []
+              join.should be_kind_of StringJoin
             end
           end
 
@@ -52,16 +61,21 @@ module Arel
 
         describe '#outer_join' do
           it "manufactures a left outer join operation between those two relations" do
-            @relation.outer_join(@relation).on(@predicate). \
-              should == OuterJoin.new(@relation, @relation, @predicate)
+            join = @relation.outer_join(@relation).on(@predicate)
+            join.relation1.should == @relation
+            join.relation2.should == @relation
+            join.predicates.should == [@predicate]
+            join.should be_kind_of OuterJoin
           end
         end
       end
 
       describe '#project' do
         it "manufactures a projection relation" do
-          @relation.project(@attribute1, @attribute2). \
-            should == Project.new(@relation, @attribute1, @attribute2)
+          project = @relation.project(@attribute1, @attribute2)
+          project.relation.should == @relation
+          project.projections.should == [@attribute1, @attribute2]
+          project.should be_kind_of Project
         end
 
         describe "when given blank attributes" do
@@ -83,11 +97,20 @@ module Arel
         end
 
         it "manufactures a where relation" do
-          @relation.where(@predicate).should == Where.new(@relation, @predicate)
+          where = @relation.where(@predicate)
+          where.relation.should == @relation
+          where.predicates.should == [@predicate]
+          where.should be_kind_of Where
         end
 
         it "accepts arbitrary strings" do
-          @relation.where("arbitrary").should == Where.new(@relation, "arbitrary")
+          where = @relation.where("arbitrary")
+          where.relation.should == @relation
+
+          where.predicates.length.should == 1
+          where.predicates.first.value.should == "arbitrary"
+
+          where.should be_kind_of Where
         end
 
         describe 'when given a blank predicate' do
@@ -99,7 +122,10 @@ module Arel
 
       describe '#order' do
         it "manufactures an order relation" do
-          @relation.order(@attribute1, @attribute2).should == Order.new(@relation, @attribute1, @attribute2)
+          order = @relation.order(@attribute1, @attribute2)
+          order.relation.should == @relation
+          order.orderings.should == [@attribute1, @attribute2]
+          order.should be_kind_of Order
         end
 
         describe 'when given a blank ordering' do
@@ -111,19 +137,24 @@ module Arel
 
       describe '#take' do
         it "manufactures a take relation" do
-          @relation.take(5).should == Take.new(@relation, 5)
+          take = @relation.take(5)
+          take.relation.should == @relation
+          take.taken.should == 5
         end
 
         describe 'when given a blank number of items' do
-          it 'returns self' do
-            @relation.take.should == @relation
+          it 'raises error' do
+            lambda { @relation.take }.should raise_exception
           end
         end
       end
 
       describe '#skip' do
         it "manufactures a skip relation" do
-          @relation.skip(4).should == Skip.new(@relation, 4)
+          skip = @relation.skip(4)
+          skip.relation.should == @relation
+          skip.skipped.should == 4
+          skip.should be_kind_of Skip
         end
 
         describe 'when given a blank number of items' do
@@ -135,7 +166,12 @@ module Arel
 
       describe '#group' do
         it 'manufactures a group relation' do
-          @relation.group(@attribute1, @attribute2).should == Group.new(@relation, @attribute1, @attribute2)
+          group = @relation.group(@attribute1, @attribute2)
+          group.relation.should == @relation
+          group.groupings.should == [@attribute1, @attribute2]
+          group.should be_kind_of Group
+          sql = group.to_sql
+          sql.should =~ /GROUP BY/
         end
 
         describe 'when given blank groupings' do
@@ -145,11 +181,14 @@ module Arel
         end
       end
 
-      describe Relation::Operable::Writable do
+      describe 'relation is writable' do
         describe '#delete' do
           it 'manufactures a deletion relation' do
-            Session.start do
-              Session.new.should_receive(:delete).with(Deletion.new(@relation))
+            Session.start do |s|
+              s.should_receive(:delete) do |delete|
+                delete.relation.should == @relation
+                delete.should be_kind_of Deletion
+              end
               @relation.delete
             end
           end
@@ -157,9 +196,14 @@ module Arel
 
         describe '#insert' do
           it 'manufactures an insertion relation' do
-            Session.start do
-              record = { @relation[:name] => 'carl' }
-              Session.new.should_receive(:create).with(Insert.new(@relation, record))
+            Session.start do |s|
+              record = { @relation[:name] => Value.new('carl', @relation) }
+              s.should_receive(:create) do |insert|
+                insert.relation.should == @relation
+                insert.record.should == record
+                insert.should be_kind_of Insert
+                insert
+              end
               @relation.insert(record)
             end
           end
@@ -167,9 +211,14 @@ module Arel
 
         describe '#update' do
           it 'manufactures an update relation' do
-            Session.start do
+            Session.start do |s|
               assignments = { @relation[:name] => Value.new('bob', @relation) }
-              Session.new.should_receive(:update).with(Update.new(@relation, assignments))
+              s.should_receive(:update) do |update|
+                update.relation.should == @relation
+                update.assignments.should == assignments
+                update.should be_kind_of Update
+                update
+              end
               @relation.update(assignments)
             end
           end
@@ -177,7 +226,7 @@ module Arel
       end
     end
 
-    describe Relation::Enumerable do
+    describe 'is enumerable' do
       it "implements enumerable" do
         @relation.map { |value| value }.should ==
         @relation.session.read(@relation).map { |value| value }

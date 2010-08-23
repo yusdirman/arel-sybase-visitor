@@ -17,12 +17,13 @@ module Arel
           @relation1                                    \
             .join(@relation2)                           \
               .on(@relation1[:id].eq(@relation2[:id]))  \
-          .let do |relation|
-            relation.call.should == [
-              Row.new(relation, [1, 'duck',  1, 'duck' ]),
-              Row.new(relation, [2, 'duck',  2, 'duck' ]),
-              Row.new(relation, [3, 'goose', 3, 'goose'])
-            ]
+          .tap do |relation|
+            rows = relation.call
+            rows.length.should == 3
+            @relation1.array.zip(rows).each do |tuple, row|
+              row.relation.should == relation
+              row.tuple.should == (tuple * 2)
+            end
           end
         end
       end

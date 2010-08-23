@@ -1,7 +1,10 @@
 module Arel
   class Externalization < Compound
-    attributes :relation
-    deriving :initialize, :==
+    include Recursion::BaseCase
+
+    def == other
+      super || Externalization === other && relation == other.relation
+    end
 
     def wheres
       []
@@ -10,15 +13,14 @@ module Arel
     def attributes
       @attributes ||= Header.new(relation.attributes.map { |a| a.to_attribute(self) })
     end
-  end
 
-  module Relation
-    def externalize
-      @externalized ||= externalizable?? Externalization.new(self) : self
+    def table_sql(formatter = Sql::TableReference.new(relation))
+      formatter.select relation.compiler.select_sql, self
     end
 
-    def externalizable?
-      false
+    # REMOVEME
+    def name
+      relation.name + '_external'
     end
   end
 end

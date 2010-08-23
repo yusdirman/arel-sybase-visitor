@@ -14,11 +14,13 @@ module Arel
       it 'filters the relation with the provided predicate' do
         @relation                       \
           .where(@relation[:id].lt(3))  \
-        .let do |relation|
-          relation.call.should == [
-            Row.new(relation, [1, 'duck']),
-            Row.new(relation, [2, 'duck']),
-          ]
+        .tap do |relation|
+          rows = relation.call
+          rows.length.should == 2
+          rows.each_with_index do |row, i|
+            row.relation.should == relation
+            row.tuple.should == [i + 1, 'duck']
+          end
         end
       end
 
@@ -27,10 +29,12 @@ module Arel
           @relation                       \
             .where(@relation[:id].gt(1))  \
             .where(@relation[:id].lt(3))  \
-          .let do |relation|
-            relation.call.should == [
-              Row.new(relation, [2, 'duck'])
-            ]
+          .tap do |relation|
+            rows = relation.call
+            rows.length.should == 1
+            row = rows.first
+            row.relation.should == relation
+            row.tuple.should == [2, 'duck']
           end
         end
       end

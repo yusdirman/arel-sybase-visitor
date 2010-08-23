@@ -1,13 +1,19 @@
 module Arel
   module Sql
     class Christener
+      def initialize
+        @names = {}
+      end
+
       def name_for(relation)
-        @used_names ||= Hash.new(0)
-        (@relation_names ||= Hash.new do |hash, relation|
-          name =  relation.table_alias ? relation.table_alias : relation.name
-          @used_names[name] += 1
-          hash[relation] = name + (@used_names[name] > 1 ? "_#{@used_names[name]}" : '')
-        end)[relation.table]
+        table = relation.table
+        name = table.table_alias || table.name
+        list = @names[name] ||= []
+
+        list << table unless list.include? table
+
+        idx = list.index table
+        name + (idx == 0 ? '' : "_#{idx + 1}")
       end
     end
   end

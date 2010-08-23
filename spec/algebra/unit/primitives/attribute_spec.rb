@@ -7,13 +7,7 @@ module Arel
       @attribute = @relation[:id]
     end
 
-    describe "#inspect" do
-      it "returns a simple, short inspect string" do
-        @attribute.inspect.should == "<Attribute id>"
-      end
-    end
-
-    describe Attribute::Transformations do
+    describe 'Attribute::Transformations' do
       describe '#as' do
         it "manufactures an aliased attributed" do
           @attribute.as(:alias).should == Attribute.new(@relation, @attribute.name, :alias => :alias, :ancestor => @attribute)
@@ -58,7 +52,7 @@ module Arel
       end
     end
 
-    describe Attribute::Congruence do
+    describe 'Attribute::Congruence' do
       describe '/' do
         before do
           @aliased_relation = @relation.alias
@@ -80,7 +74,7 @@ module Arel
       end
     end
 
-    describe Attribute::Predications do
+    describe 'Attribute::Predications' do
       before do
         @attribute = Attribute.new(@relation, :name)
       end

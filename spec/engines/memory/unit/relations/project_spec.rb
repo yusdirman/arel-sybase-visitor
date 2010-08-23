@@ -14,12 +14,12 @@ module Arel
       it 'retains only the attributes that are provided' do
         @relation                   \
           .project(@relation[:id])  \
-        .let do |relation|
-          relation.call.should == [
-            Row.new(relation, [1]),
-            Row.new(relation, [2]),
-            Row.new(relation, [3])
-          ]
+        .tap do |relation|
+          rows = relation.call
+          @relation.array.zip(rows) do |tuple, row|
+            row.relation.should == relation
+            row.tuple.should == [tuple.first]
+          end
         end
       end
     end
