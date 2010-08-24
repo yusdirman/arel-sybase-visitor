@@ -89,7 +89,7 @@ module Arel
           "INSERT",
           "INTO #{relation.table_sql}",
           insertion_attributes_values_sql,
-          ("RETURNING #{engine.connection.quote_column_name(primary_key)}" if include_returning && relation.compiler.supports_insert_with_returning?)
+          ("RETURNING #{engine.connection.quote_column_name(relation.primary_key)}" if include_returning && relation.compiler.supports_insert_with_returning?)
       end
 
       def supports_insert_with_returning?
