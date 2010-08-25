@@ -97,6 +97,14 @@ module Arel
         end
 
         it "manufactures a where relation" do
+          where = @relation.where("intern\nnet")
+          where.to_sql.should be_like %{
+SELECT     "users"."id", "users"."name" FROM       "users"  WHERE     intern
+ net
+          }
+        end
+
+        it "manufactures a where relation" do
           where = @relation.where(@predicate)
           where.relation.should == @relation
           where.predicates.should == [@predicate]
