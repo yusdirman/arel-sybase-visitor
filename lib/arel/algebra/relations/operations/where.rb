@@ -4,7 +4,8 @@ module Arel
 
     def initialize(relation, predicates)
       super(relation)
-      @predicates = predicates.map { |p| p.bind(relation) }
+      @predicates = predicates.respond_to?(:map) ?
+        predicates.map { |p| p.bind(relation) } : [predicates.bind(relation)]
       @wheres = nil
     end
 
