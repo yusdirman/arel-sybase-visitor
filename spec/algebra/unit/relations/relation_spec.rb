@@ -98,10 +98,7 @@ module Arel
 
         it "manufactures a where relation" do
           where = @relation.where("intern\nnet")
-          where.to_sql.should be_like %{
-SELECT     "users"."id", "users"."name" FROM       "users"  WHERE     intern
- net
-          }
+          where.to_sql.should =~ /intern\nnet/
         end
 
         it "manufactures a where relation" do
