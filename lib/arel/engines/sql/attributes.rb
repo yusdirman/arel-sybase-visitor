@@ -15,7 +15,7 @@ module Arel
         when :binary    then String
         when :boolean   then Boolean
         else
-          raise NotImplementedError, "Column type `#{column.type}` is not currently handled"
+          Undefined
         end
       end
 
@@ -26,6 +26,11 @@ module Arel
 
       def type_cast(value)
         @column.type_cast(value)
+      end
+
+      # Attribute type for column types that Arel doesn't know how to handle.
+      class Undefined < Arel::Attribute
+        include Attributes
       end
 
       %w(Boolean Decimal Float Integer String Time).each do |klass|
