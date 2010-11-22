@@ -4,6 +4,7 @@ require 'arel/visitors/sqlite'
 require 'arel/visitors/postgresql'
 require 'arel/visitors/mysql'
 require 'arel/visitors/oracle'
+require 'arel/visitors/sybase_ase12'
 require 'arel/visitors/join_sql'
 require 'arel/visitors/where_sql'
 require 'arel/visitors/order_clauses'
@@ -16,6 +17,7 @@ module Arel
       'mysql'           => Arel::Visitors::MySQL,
       'mysql2'          => Arel::Visitors::MySQL,
       'oracle_enhanced' => Arel::Visitors::Oracle,
+      'sybase_ase12'    => Arel::Visitors::SybaseASE12,
       'sqlite'          => Arel::Visitors::SQLite,
       'sqlite3'         => Arel::Visitors::SQLite,
     }
