@@ -1,19 +1,21 @@
-require "rubygems"
-gem 'hoe', '>= 2.1.0'
-require 'hoe'
+require 'rubygems'
 
-Hoe.plugin :minitest
-Hoe.plugin :gemspec # `gem install hoe-gemspec`
-Hoe.plugin :git     # `gem install hoe-git`
+begin
+  require 'jeweler'
+  Jeweler::Tasks.new do |gemspec|
+    gemspec.name = 'arel-sybase-visitor'
 
-Hoe.spec 'arel' do
-  developer('Aaron Patterson', 'aaron@tenderlovemaking.com')
-  developer('Bryan Halmkamp', 'bryan@brynary.com')
-  developer('Emilio Tagua', 'miloops@gmail.com')
-  developer('Nick Kallen', 'nick@example.org') # FIXME: need Nick's email
+    gemspec.summary          = %[Sybase ASE visitor for AREL]
+    gemspec.description      = %[Sybase ASE doesn't implement LIMIT and OFFSET. This visitor implements them for usage with arel's .limit() and .offset()]
+    gemspec.homepage         = 'http://github.com/ifad/arel-sybase-visitor'
 
-  self.readme_file      = 'README.markdown'
-  self.extra_rdoc_files = FileList['README.markdown']
-  self.extra_dev_deps << [ 'hoe', '>= 2.1.0' ]
-  self.extra_dev_deps << [ 'minitest', '>= 1.6.0' ]
+    gemspec.authors          = ['Mirek Rusin', 'Marcello Barnaba']
+    gemspec.email            = ['mirek@me.com', 'vjt@openssl.it']
+    gemspec.version          = '0.1.0'
+    gemspec.extra_rdoc_files = FileList['README.markdown']
+    gemspec.has_rdoc         = true
+  end
+
+rescue LoadError
+  puts 'Jeweler not available. Install it with: gem install jeweler'
 end
