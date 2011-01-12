@@ -82,5 +82,8 @@ module Arel
       end
 
     end
+
+    # Install the visitor
+    VISITORS['sybase_ase12'] = SybaseASE12
   end
 end
