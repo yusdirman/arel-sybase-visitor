@@ -17,7 +17,7 @@ module Arel
           o.offset = nil
           sql = super(o)
           return <<-eosql
-            SET ROWCOUNT = #{offset.value.to_i + limit}
+            SET ROWCOUNT #{offset.value.to_i + limit}
 
             SELECT
               *,
@@ -37,7 +37,7 @@ module Arel
             DROP TABLE
               #__arel_tmp
 
-            SET ROWCOUNT = 0
+            SET ROWCOUNT 0
           eosql
         end
 
@@ -45,7 +45,7 @@ module Arel
           o       = o.dup
           limit   = o.limit
           o.limit = nil
-          return "SET ROWCOUNT = #{limit} SELECT * FROM (#{super(o)})"
+          return "SET ROWCOUNT #{limit} SELECT * FROM (#{super(o)}) __arel_dp"
         end
 
         if o.offset
@@ -54,7 +54,7 @@ module Arel
           o.offset = nil
           sql = super(o)
           return <<-eosql
-            SET ROWCOUNT = #{offset.value.to_i + limit}
+            SET ROWCOUNT #{offset.value.to_i + limit}
 
             SELECT
               *,
@@ -74,7 +74,7 @@ module Arel
             DROP TABLE
               #__arel_tmp
 
-            SET ROWCOUNT = 0
+            SET ROWCOUNT 0
           eosql
         end
 
