@@ -1,4 +1,7 @@
-
+# Arel Sybase ASE Visitor
+#
+# Author: Mirek Rusin <mirek@me.com>
+#
 module Arel
   module Visitors
     class SybaseASE12 < Arel::Visitors::ToSql
