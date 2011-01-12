@@ -19,7 +19,7 @@ module Arel
           o.limit  = nil
           o.offset = nil
 
-          group, order = group_and_order_for(o)
+          order = extract_order_from(o)
 
           sql = super(o)
           return <<-eosql
@@ -33,7 +33,6 @@ module Arel
             FROM
               (#{sql}) AS __arel_select
             #{order}
-            #{group}
 
             SELECT
               *
@@ -61,7 +60,7 @@ module Arel
           offset   = o.offset
           o.offset = nil
 
-          group, order = group_and_order_for(o)
+          order = extract_order_from(o)
 
           sql = super(o)
           return <<-eosql
@@ -75,7 +74,6 @@ module Arel
             FROM
               (#{sql}) AS __arel_select
             #{order}
-            #{group}
 
             SELECT
               *
@@ -94,24 +92,18 @@ module Arel
         super
       end
 
-      # Extracts group and order clauses from the given Arel::Node and
+      # Extracts the eventual order clause from the given Arel::Node and
       # transforms them into raw SQL.
       #
       # o - The Arel::Node
       #
-      # Returns an array containing group SQL as the first element and
-      # order SQL as the second one. Both can be nil if they're unset.
-      def group_and_order_for o
-        # Bring orders and groups outside - quite dirty - to clean up
+      # Returns the raw ORDER BY SQL, or nil if there were no ORDER clause.
+      #
+      # TODO cleanup
+      def extract_order_from o
         orders   = o.orders
         o.orders = []
-        order = "ORDER BY #{orders.join ','}" unless orders.blank?
-
-        groups   = o.cores.map(&:groups).flatten.map(&:to_sql)
-        o.cores.each {|c| c.groups = []}
-        group = "GROUP BY #{groups.join ','}" unless groups.blank?
-
-        return [group, order]
+        "ORDER BY #{orders.join ','}" unless orders.blank?
       end
 
     end
