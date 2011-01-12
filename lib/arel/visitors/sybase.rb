@@ -4,7 +4,7 @@
 #
 module Arel
   module Visitors
-    class SybaseASE12 < Arel::Visitors::ToSql
+    class Sybase < Arel::Visitors::ToSql
       private
 
       def visit_Arel_Nodes_SelectStatement o
@@ -84,6 +84,6 @@ module Arel
     end
 
     # Install the visitor
-    VISITORS['sybase_ase12'] = SybaseASE12
+    VISITORS['sybase'] = Sybase
   end
 end
