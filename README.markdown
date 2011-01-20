@@ -10,9 +10,24 @@ This repository contains an Arel Visitor for Sybase ASE, that implements .limit(
 
 ## INSTALLATION
 
-* gem install arel-sybase-visitor
-* require 'arel/visitors/sybase'
+If defined?(Bundler):
 
-If using bundler:
+    gem 'arel-sybase-visitor', :git => 'git://github.com/ifad/arel-sybase-visitor'
 
-gem 'arel-sybase-visitor', :git => 'git://github.com/ifad/arel-sybase-visitor', :require => 'arel/visitors/sybase'
+else:
+
+    gem install arel-sybase-visitor
+
+config/application.rb:
+
+    config.after_initialize do
+      require 'arel/visitors/sybase'
+    end
+
+The above is quite dirty, will be fixed soon.
+
+## COMPATIBILITY
+
+arel ~> 2.0.0, < 2.0.7 - 2.0.7 introduced the Limit node, this visitor will be fixed soon.
+
+Sooner if you send out a pull request :-).
