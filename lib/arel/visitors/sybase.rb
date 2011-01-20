@@ -52,7 +52,13 @@ module Arel
           o       = o.dup
           limit   = o.limit
           o.limit = nil
-          return "SET ROWCOUNT #{limit} #{super(o)}"
+          return <<-eosql
+            SET ROWCOUNT #{limit}
+
+            #{super(o)}
+
+            SET ROWCOUNT 0
+          eosql
         end
 
         if o.offset
