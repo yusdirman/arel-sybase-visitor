@@ -12,105 +12,61 @@ module Arel
 
       def visit_Arel_Nodes_SelectStatement o
 
+        # LIMIT, OFFSET
         if o.limit && o.offset
           o        = o.dup
-          limit    = o.limit.to_i
-          offset   = o.offset
+          limit    = o.limit.expr
+          offset   = o.offset.expr + 1
           o.limit  = nil
           o.offset = nil
 
-          order = extract_order_from(o)
-
-          sql = super(o)
-          return <<-eosql
-            SET ROWCOUNT #{offset.value.to_i + limit}
-
-            SELECT
-              *,
-              __arel_rownum = identity(8)
-            INTO
-              #__arel_tmp
-            FROM
-              (#{sql}) AS __arel_select
-            #{order}
-
-            SELECT
-              *
-            FROM
-              #__arel_tmp
-            WHERE
-              __arel_rownum BETWEEN #{offset.value.to_i + 1} AND #{offset.value.to_i + limit}
-
-            DROP TABLE
-              #__arel_tmp
-
-            SET ROWCOUNT 0
-          eosql
+          return cursor_query_for(super(o), limit, offset)
         end
 
+        # LIMIT-only case
         if o.limit
           o       = o.dup
-          limit   = o.limit
+          limit   = o.limit.expr
           o.limit = nil
           return <<-eosql
             SET ROWCOUNT #{limit}
-
             #{super(o)}
-
             SET ROWCOUNT 0
           eosql
         end
 
+        # OFFSET-only case
         if o.offset
           o        = o.dup
-          offset   = o.offset
+          offset   = o.offset.expr + 1
           o.offset = nil
 
-          order = extract_order_from(o)
-
-          sql = super(o)
-          return <<-eosql
-            SET ROWCOUNT #{offset.value.to_i + limit}
-
-            SELECT
-              *,
-              __arel_rownum = identity(8)
-            INTO
-              #__arel_tmp
-            FROM
-              (#{sql}) AS __arel_select
-            #{order}
-
-            SELECT
-              *
-            FROM
-              #__arel_tmp
-            WHERE
-              __arel_rownum >= #{offset.value.to_i + 1}
-
-            DROP TABLE
-              #__arel_tmp
-
-            SET ROWCOUNT 0
-          eosql
+          return cursor_query_for(super(o), 5000, offset)
         end
 
         super
       end
 
-      # Extracts the eventual order clause from the given Arel::Node and
-      # transforms them into raw SQL.
-      #
-      # o - The Arel::Node
-      #
-      # Returns the raw ORDER BY SQL, or nil if there were no ORDER clause.
-      #
-      # TODO cleanup
-      def extract_order_from o
-        orders   = o.orders
-        o.orders = []
-        "ORDER BY #{orders.join ','}" unless orders.blank?
-      end
+      private
+        def cursor_query_for(sql, limit, offset)
+          cursor = cursor_for(sql)
+
+          return <<-eosql
+            SET CURSOR ROWS #{limit} FOR #{cursor}
+            OPEN #{cursor}
+            FETCH ABSOLUTE #{offset} #{cursor}
+            CLOSE #{cursor}
+          eosql
+        end
+
+        def cursor_for(sql)
+          cursor = "__arel_cursor_#{Zlib.crc32(sql).to_s(16)}"
+          Cursors[sql] ||= cursor.tap do |name|
+            @engine.connection.execute("DECLARE #{cursor} SCROLL CURSOR FOR #{sql} FOR READ ONLY")
+          end
+        end
+
+        Cursors = {}
 
     end
 

@@ -6,7 +6,8 @@
 
 Arel is a Relational Algebra for Ruby. Read more about arel on http://github.com/rails/arel
 
-This repository contains an Arel Visitor for Sybase ASE, that implements .limit() and .offset() using ROWCOUNT and temporary tables.
+This repository contains an Arel Visitor for Sybase ASE, that implements .limit() and .offset()
+using ROWCOUNT and cursors - with only a single nasty hack - assured! :-)
 
 ## INSTALLATION
 
@@ -28,6 +29,5 @@ The above is quite dirty, will be fixed soon.
 
 ## COMPATIBILITY
 
-arel ~> 2.0.0, < 2.0.7 - 2.0.7 introduced the Limit node, this visitor will be fixed soon.
+arel ~> 2.0.7 - earlier releases won't work.
 
-Sooner if you send out a pull request :-).
