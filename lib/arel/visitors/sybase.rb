@@ -49,24 +49,17 @@ module Arel
 
       private
         def cursor_query_for(sql, limit, offset)
-          cursor = cursor_for(sql)
+          cursor = "__arel_cursor_#{rand(0xffff)}"
+          @engine.connection.execute("DECLARE #{cursor} SCROLL CURSOR FOR #{sql} FOR READ ONLY")
 
           return <<-eosql
             SET CURSOR ROWS #{limit} FOR #{cursor}
             OPEN #{cursor}
             FETCH ABSOLUTE #{offset} #{cursor}
             CLOSE #{cursor}
+            DEALLOCATE #{cursor}
           eosql
         end
-
-        def cursor_for(sql)
-          cursor = "__arel_cursor_#{Zlib.crc32(sql).to_s(16)}"
-          Cursors[sql] ||= cursor.tap do |name|
-            @engine.connection.execute("DECLARE #{cursor} SCROLL CURSOR FOR #{sql} FOR READ ONLY")
-          end
-        end
-
-        Cursors = {}
 
     end
 
