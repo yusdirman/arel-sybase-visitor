@@ -48,11 +48,14 @@ module Arel
       end
 
       private
+        # Danger Will Robinson! This SQL code only
+        # works with the patched AR Sybase Adapter
+        # on the http://github.com/ifad repository
         def cursor_query_for(sql, limit, offset)
           cursor = "__arel_cursor_#{rand(0xffff)}"
-          @engine.connection.execute("DECLARE #{cursor} SCROLL CURSOR FOR #{sql} FOR READ ONLY")
 
           return <<-eosql
+            DECLARE #{cursor} SCROLL CURSOR FOR #{sql} FOR READ ONLY
             SET CURSOR ROWS #{limit} FOR #{cursor}
             OPEN #{cursor}
             FETCH ABSOLUTE #{offset} #{cursor}

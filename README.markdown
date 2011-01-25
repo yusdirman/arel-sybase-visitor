@@ -7,17 +7,15 @@
 Arel is a Relational Algebra for Ruby. Read more about arel on http://github.com/rails/arel
 
 This repository contains an Arel Visitor for Sybase ASE, that implements .limit() and .offset()
-using ROWCOUNT and cursors - with only a single nasty hack - assured! :-)
+using ROWCOUNT and Server-Side Cursors. Because cursors must be declared in their own batch, this
+visitor requires a patched sybase adapter, available [onto a public IFAD GitHub Repository](http://github.com/ifad/activerecord-sybase-adapter)
 
 ## INSTALLATION
 
-If defined?(Bundler):
+Bundler is required. Gemfile:
 
-    gem 'arel-sybase-visitor', :git => 'git://github.com/ifad/arel-sybase-visitor'
-
-else:
-
-    gem install arel-sybase-visitor
+    gem 'activerecord-sybase-adapter', :git => 'git://github.com/ifad/activerecord-sybase-adapter'
+    gem 'arel-sybase-visitor',         :git => 'git://github.com/ifad/arel-sybase-visitor'
 
 config/application.rb:
 
