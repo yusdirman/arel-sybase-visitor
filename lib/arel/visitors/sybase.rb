@@ -11,23 +11,22 @@ module Arel
       private
 
       def visit_Arel_Nodes_SelectStatement o
+        limit, offset = o.limit.try(:expr) || 0, o.offset.try(:expr) || 0
 
-        # LIMIT, OFFSET
-        if o.limit && o.offset
+        # Alter the node if a limit or offset are set
+        if limit > 0 || offset > 0
           o        = o.dup
-          limit    = o.limit.expr
-          offset   = o.offset.expr + 1
           o.limit  = nil
           o.offset = nil
+        end
 
+        # LIMIT, OFFSET
+        if limit > 0 && offset > 0
           return cursor_query_for(super(o), limit, offset)
         end
 
         # LIMIT-only case
-        if o.limit
-          o       = o.dup
-          limit   = o.limit.expr
-          o.limit = nil
+        if limit > 0
           return <<-eosql
             SET ROWCOUNT #{limit}
             #{super(o)}
@@ -36,11 +35,7 @@ module Arel
         end
 
         # OFFSET-only case
-        if o.offset
-          o        = o.dup
-          offset   = o.offset.expr + 1
-          o.offset = nil
-
+        if offset > 0
           return cursor_query_for(super(o), 5000, offset)
         end
 
@@ -58,7 +53,7 @@ module Arel
             DECLARE #{cursor} SCROLL CURSOR FOR #{sql} FOR READ ONLY
             SET CURSOR ROWS #{limit} FOR #{cursor}
             OPEN #{cursor}
-            FETCH ABSOLUTE #{offset} #{cursor}
+            FETCH ABSOLUTE #{offset+1} #{cursor}
             CLOSE #{cursor}
             DEALLOCATE #{cursor}
           eosql
