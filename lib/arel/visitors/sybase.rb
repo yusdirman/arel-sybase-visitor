@@ -1,4 +1,4 @@
-# Arel Sybase ASE Visitor
+# Arel Sybase ASE 15.0 Visitor
 #
 # Authors:
 #

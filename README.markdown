@@ -27,5 +27,6 @@ The above is quite dirty, will be fixed soon.
 
 ## COMPATIBILITY
 
+Sybase ASE >= 15.0 - for SCROLL CURSORS. Use the ase_12_5 branch if you're stuck at the 12.5 version.
 arel ~> 2.0.7 - earlier releases won't work.
 
