@@ -1,4 +1,4 @@
-# Arel Sybase ASE Visitor
+# Arel Sybase ASE 12.5 Visitor
 #
 # Authors:
 #
@@ -22,41 +22,44 @@ module Arel
 
         # LIMIT, OFFSET
         if limit > 0 && offset > 0
-          return cursor_query_for(super(o), limit, offset)
+          return temp_table_query_for(super(o), limit, offset)
         end
 
         # LIMIT-only case
         if limit > 0
-          return <<-eosql
-            SET ROWCOUNT #{limit}
-            #{super(o)}
-            SET ROWCOUNT 0
-          eosql
+          return set_rowcount_for(super(o), limit)
         end
 
-        # OFFSET-only case
+        # OFFSET-only case. Please note that at most 5000 rows
+        # are fetched, that should be enough for everyone (tm)
         if offset > 0
-          return cursor_query_for(super(o), 5000, offset)
+          return temp_table_query_for(super(o), 5000, offset)
         end
 
         super
       end
 
+      require 'ruby-debug'
       private
-        # Danger Will Robinson! This SQL code only
-        # works with the patched AR Sybase Adapter
-        # on the http://github.com/ifad repository
-        def cursor_query_for(sql, limit, offset)
-          cursor = "__arel_cursor_#{rand(0xffff)}"
+        # I know, it's dirty, ARel shouldn't be used
+        # like that, yada yada - but ARel doesn't
+        # support SELECT INTO thus a RegExp must be
+        # used anyway.
+        def temp_table_query_for(sql, limit, offset)
+          #debugger
+          tmp = "#__arel_tmp_#{rand(0xffff)}"
 
-          return <<-eosql
-            DECLARE #{cursor} SCROLL CURSOR FOR #{sql} FOR READ ONLY
-            SET CURSOR ROWS #{limit} FOR #{cursor}
-            OPEN #{cursor}
-            FETCH ABSOLUTE #{offset+1} #{cursor}
-            CLOSE #{cursor}
-            DEALLOCATE #{cursor}
-          eosql
+          sql.sub! /\bFROM\b/, ", __arel_rowid = identity(8) INTO #{tmp} \\&"
+          sql.concat %(
+            SELECT * FROM #{tmp} WHERE __arel_rowid > #{offset}
+            DROP TABLE #{tmp}
+          )
+
+          return set_rowcount_for(sql, limit + offset)
+        end
+
+        def set_rowcount_for(sql, count)
+          "SET ROWCOUNT #{count} #{sql} SET ROWCOUNT 0"
         end
 
     end
