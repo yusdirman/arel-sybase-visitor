@@ -39,14 +39,12 @@ module Arel
         super
       end
 
-      require 'ruby-debug'
       private
         # I know, it's dirty, ARel shouldn't be used
         # like that, yada yada - but ARel doesn't
         # support SELECT INTO thus a RegExp must be
         # used anyway.
         def temp_table_query_for(sql, limit, offset)
-          #debugger
           tmp = "#__arel_tmp_#{rand(0xffff)}"
 
           sql.sub! /\bFROM\b/, ", __arel_rowid = identity(8) INTO #{tmp} \\&"
