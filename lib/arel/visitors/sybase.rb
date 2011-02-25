@@ -10,33 +10,32 @@ module Arel
     class Sybase < Arel::Visitors::ToSql
       private
 
-      # Implements LIMIT and OFFSET using temporary tables.
-      def visit_Arel_Nodes_SelectStatement o
-        limit, offset = o.limit.try(:expr) || 0, o.offset.try(:expr) || 0
+        # Implements LIMIT and OFFSET using temporary tables.
+        def visit_Arel_Nodes_SelectStatement o
+          limit, offset = o.limit.try(:expr) || 0, o.offset.try(:expr) || 0
 
-        # Alter the node if a limit or offset are set
-        if limit > 0 || offset > 0
-          o        = o.dup
-          o.limit  = nil
-          o.offset = nil
+          # Alter the node if a limit or offset are set
+          if limit > 0 || offset > 0
+            o        = o.dup
+            o.limit  = nil
+            o.offset = nil
+          end
+
+          if limit > 0 && offset > 0
+            # LIMIT, OFFSET
+            temp_table_query_for(super(o), limit, offset)
+          elsif limit > 0
+            # LIMIT-only case
+            set_rowcount_for(super(o), limit)
+          elsif offset > 0
+            # OFFSET-only case. Please note that at most 5000 rows
+            # are fetched, that should be enough for everyone (tm)
+            temp_table_query_for(super(o), 5000, offset)
+          else
+            super
+          end
         end
 
-        if limit > 0 && offset > 0
-          # LIMIT, OFFSET
-          temp_table_query_for(super(o), limit, offset)
-        elsif limit > 0
-          # LIMIT-only case
-          set_rowcount_for(super(o), limit)
-        elsif offset > 0
-          # OFFSET-only case. Please note that at most 5000 rows
-          # are fetched, that should be enough for everyone (tm)
-          temp_table_query_for(super(o), 5000, offset)
-        else
-          super
-        end
-      end
-
-      private
         # I know, it's dirty, ARel shouldn't be used
         # like that, yada yada - but ARel doesn't
         # support SELECT INTO thus a RegExp must be
