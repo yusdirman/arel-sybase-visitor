@@ -10,32 +10,30 @@ module Arel
     class Sybase < Arel::Visitors::ToSql
       private
 
-      # Implements LIMIT and OFFSET using temporary tables.
-      def visit_Arel_Nodes_SelectStatement o
-        limit, offset = o.limit.try(:expr) || 0, o.offset.try(:expr) || 0
+        def visit_Arel_Nodes_SelectStatement o
+          limit, offset = o.limit.try(:expr) || 0, o.offset.try(:expr) || 0
 
-        # Alter the node if a limit or offset are set
-        if limit > 0 || offset > 0
-          o        = o.dup
-          o.limit  = nil
-          o.offset = nil
+          # Alter the node if a limit or offset are set
+          if limit > 0 || offset > 0
+            o        = o.dup
+            o.limit  = nil
+            o.offset = nil
+          end
+
+          if limit > 0 && offset > 0
+            # LIMIT, OFFSET
+            cursor_query_for(super(o), limit, offset)
+          elsif limit > 0
+            # LIMIT-only case
+            %[ SET ROWCOUNT #{limit} #{super(o)} SET ROWCOUNT 0 ]
+          elsif offset > 0
+            # OFFSET-only case
+            cursor_query_for(super(o), 5000, offset)
+          else
+            super
+          end
         end
 
-        if limit > 0 && offset > 0
-          # LIMIT, OFFSET
-          cursor_query_for(super(o), limit, offset)
-        elsif limit > 0
-          # LIMIT-only case
-          %[ SET ROWCOUNT #{limit} #{super(o)} SET ROWCOUNT 0 ]
-        elsif offset > 0
-          # OFFSET-only case
-          cursor_query_for(super(o), 5000, offset)
-        else
-          super
-        end
-      end
-
-      private
         # Danger Will Robinson! This SQL code only
         # works with the patched AR Sybase Adapter
         # on the http://github.com/ifad repository
