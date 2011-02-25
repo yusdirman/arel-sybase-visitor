@@ -10,6 +10,7 @@ module Arel
     class Sybase < Arel::Visitors::ToSql
       private
 
+      # Implements LIMIT and OFFSET using temporary tables.
       def visit_Arel_Nodes_SelectStatement o
         limit, offset = o.limit.try(:expr) || 0, o.offset.try(:expr) || 0
 
@@ -20,26 +21,18 @@ module Arel
           o.offset = nil
         end
 
-        # LIMIT, OFFSET
         if limit > 0 && offset > 0
-          return cursor_query_for(super(o), limit, offset)
+          # LIMIT, OFFSET
+          cursor_query_for(super(o), limit, offset)
+        elsif limit > 0
+          # LIMIT-only case
+          %[ SET ROWCOUNT #{limit} #{super(o)} SET ROWCOUNT 0 ]
+        elsif offset > 0
+          # OFFSET-only case
+          cursor_query_for(super(o), 5000, offset)
+        else
+          super
         end
-
-        # LIMIT-only case
-        if limit > 0
-          return <<-eosql
-            SET ROWCOUNT #{limit}
-            #{super(o)}
-            SET ROWCOUNT 0
-          eosql
-        end
-
-        # OFFSET-only case
-        if offset > 0
-          return cursor_query_for(super(o), 5000, offset)
-        end
-
-        super
       end
 
       private
