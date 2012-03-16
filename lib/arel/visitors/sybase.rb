@@ -106,7 +106,7 @@ module Arel
 
     end
 
-    # Install the visitor
-    VISITORS['sybase'] = Sybase
+    # Install the visitor - only for AR <= 3.0
+    VISITORS['sybase'] = Sybase if defined?(VISITORS)
   end
 end
