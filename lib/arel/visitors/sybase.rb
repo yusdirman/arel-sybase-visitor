@@ -41,49 +41,6 @@ module Arel
           end
         end
 
-        # On ASE 12.5 the empty string has a puzzling behaviour:
-        #
-        # http://infocenter.sybase.com/help/index.jsp?topic=/com.sybase.help.ase_15.0.blocks/html/blocks/blocks262.htm
-        #
-        # Meaning that "" becomes " " on INSERT, and assigments:
-        #
-        # 1> select '"' || '' || '"'
-        # 2> go
-        #
-        # ---
-        #   " "
-        #
-        # Because ' ' is NOT an empty string, and it creeps up
-        # till to the ERB views, it requires that WHERE clauses
-        # take care of it, etc - we replace it with a NULL here
-        #
-        # OK, '' is different than a NULL, but it seems that on
-        # Sybase this is not the case. For instance:
-        #
-        # 1> select ltrim('')
-        # 2> go
-        #
-        # -
-        #   NULL
-        #
-        # Anyway, tables created with Rails migrations set columns
-        # nullable by default so this should not be an issue as
-        # long as you don't update legacy tables used by legacy
-        # software that actually expects " " to represent the empty
-        # string ...
-        def visit_Arel_Nodes_UpdateStatement(o)
-          o.values.each do |assignment|
-            assignment.right = null_if_empty_string(assignment.right)
-          end
-          super
-        end
-
-        # See +visit_Arel_Nodes_UpdateStatement+ documentation
-        def visit_Arel_Nodes_InsertStatement(o)
-          o.values.expressions.map! &method(:null_if_empty_string)
-          super
-        end
-
         ########## Our private API
 
         # I know, it's dirty, ARel shouldn't be used
