@@ -63,12 +63,6 @@ module Arel
           "SET ROWCOUNT #{count} #{sql} SET ROWCOUNT 0"
         end
 
-        # Returns value unless it is a string and it is empty,
-        # in that case nil is returned.
-        def null_if_empty_string(value)
-          value unless value.is_a?(String) && value.length.zero?
-        end
-
     end
 
     # Install the visitor - only for AR <= 3.0
