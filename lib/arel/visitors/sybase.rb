@@ -15,7 +15,7 @@ module Arel
     class Sybase < Arel::Visitors::ToSql
       private
 
-        def visit_Arel_Nodes_SelectStatement(o, a)
+        def visit_Arel_Nodes_SelectStatement(o)
           limit, offset = o.limit.try(:expr) || 0, o.offset.try(:expr) || 0
 
           # Alter the node if a limit or offset are set
@@ -27,13 +27,13 @@ module Arel
 
           if limit > 0 && offset > 0
             # LIMIT, OFFSET
-            cursor_query_for(super(o, a), limit, offset)
+            cursor_query_for(super(o), limit, offset)
           elsif limit > 0
             # LIMIT-only case
-            %[ SET ROWCOUNT #{limit} #{super(o, a)} SET ROWCOUNT 0 ]
+            %[ SET ROWCOUNT #{limit} #{super(o)} SET ROWCOUNT 0 ]
           elsif offset > 0
             # OFFSET-only case
-            cursor_query_for(super(o, a), 5000, offset)
+            cursor_query_for(super(o), 5000, offset)
           else
             super
           end
